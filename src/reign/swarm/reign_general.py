@@ -152,6 +152,17 @@ class ReignGeneral:
             target = "kubernetes"
         elif "terraform" in request_lower or "infrastructure" in request_lower:
             target = "terraform"
+        elif "github" in request_lower and ("actions" in request_lower or "workflow" in request_lower):
+            target = "github_actions"
+        elif "gitlab" in request_lower and ("ci" in request_lower or "pipeline" in request_lower):
+            target = "gitlab"
+        elif "ci/cd" in request_lower or "cicd" in request_lower:
+            if "github" in request_lower:
+                target = "github_actions"
+            elif "gitlab" in request_lower:
+                target = "gitlab"
+            else:
+                target = "github_actions"  # Default for CI/CD
         elif "github" in request_lower or "repository" in request_lower or "repo" in request_lower:
             target = "github"
         elif "container" in request_lower or "docker" in request_lower or "image" in request_lower:
@@ -218,6 +229,30 @@ class ReignGeneral:
         
         # Detect components that need to be deployed
         components = self._detect_components(request_lower)
+        
+        # CI/CD pipeline/workflow task (should be early, may depend on Docker)
+        docker_task_id = None
+        if "ci_cd" in components:
+            cicd_platform = components["ci_cd"]
+            cicd_agent_type = "gitlab" if "gitlab" in cicd_platform else "github_actions"
+            
+            # CI/CD task creation (depends on Docker if Docker image build is needed)
+            ci_cd_description = f"Setup {cicd_platform.replace('_', ' ').title()} pipeline"
+            if "docker" in request_lower or "image" in request_lower:
+                ci_cd_description += " for Docker image build and push"
+            elif "kubernetes" in request_lower:
+                ci_cd_description += " for Kubernetes deployment"
+            
+            tasks.append(Task(
+                id=task_id,
+                description=ci_cd_description,
+                agent_type=cicd_agent_type,
+                params={"action": "generate_config", "platform": cicd_platform}
+            ))
+            cicd_task_id = task_id
+            task_id += 1
+        else:
+            cicd_task_id = None
         
         # Create tasks with proper dependencies
         # Database should come first (other services depend on it)
@@ -382,5 +417,23 @@ class ReignGeneral:
             components["monitoring"] = "datadog"
         elif "newrelic" in request_lower:
             components["monitoring"] = "newrelic"
+        
+        # CI/CD Platform detection (NEW)
+        if "gitlab" in request_lower and ("ci" in request_lower or "pipeline" in request_lower or "deploy" in request_lower):
+            components["ci_cd"] = "gitlab"
+        elif "github" in request_lower and ("actions" in request_lower or "workflow" in request_lower):
+            components["ci_cd"] = "github_actions"
+        elif ("github actions" in request_lower or "github-actions" in request_lower):
+            components["ci_cd"] = "github_actions"
+        elif "gitlab ci" in request_lower or "gitlab-ci" in request_lower:
+            components["ci_cd"] = "gitlab"
+        elif "ci/cd" in request_lower or "cicd" in request_lower:
+            # Default to github_actions if CI/CD mentioned but platform not specific
+            if "github" in request_lower:
+                components["ci_cd"] = "github_actions"
+            elif "gitlab" in request_lower:
+                components["ci_cd"] = "gitlab"
+            else:
+                components["ci_cd"] = "github_actions"  # Default
         
         return components
