@@ -305,40 +305,82 @@ class ReignGeneral:
         """Detect what components are mentioned in the request"""
         components = {}
         
-        # Database detection
-        if "postgresql" in request_lower or "postgres" in request_lower:
+        # Database detection (enhanced)
+        if "postgresql" in request_lower or "postgres" in request_lower or "pg" in request_lower:
             components["database"] = "postgresql"
-        elif "mysql" in request_lower:
+        elif "mysql" in request_lower or "mariadb" in request_lower:
             components["database"] = "mysql"
         elif "mongodb" in request_lower or "mongo" in request_lower:
             components["database"] = "mongodb"
-        elif "database" in request_lower or "db" in request_lower:
+        elif "elasticsearch" in request_lower or "elastic" in request_lower:
+            components["database"] = "elasticsearch"
+        elif "dynamodb" in request_lower:
+            components["database"] = "dynamodb"
+        elif "cassandra" in request_lower:
+            components["database"] = "cassandra"
+        elif "database" in request_lower or "db " in request_lower or " db" in request_lower:
             components["database"] = "postgresql"  # Default
         
-        # Cache detection
+        # Cache detection (enhanced)
         if "redis" in request_lower:
             components["cache"] = "redis"
-        elif "memcached" in request_lower:
+        elif "memcached" in request_lower or "memcache" in request_lower:
             components["cache"] = "memcached"
-        elif "cache" in request_lower:
+        elif "hazelcast" in request_lower:
+            components["cache"] = "hazelcast"
+        elif "cache" in request_lower or "in-memory" in request_lower:
             components["cache"] = "redis"  # Default
         
-        # Backend/API detection
-        if "node" in request_lower or "nodejs" in request_lower:
-            components["api"] = "nodejs"
-        elif "python" in request_lower or "flask" in request_lower or "django" in request_lower:
-            components["api"] = "python"
-        elif "api" in request_lower or "backend" in request_lower or "server" in request_lower:
-            components["api"] = "nginx"  # Default for generic API/backend
+        # Message Queue detection (new)
+        if "rabbitmq" in request_lower or "rabbit" in request_lower:
+            components["queue"] = "rabbitmq"
+        elif "kafka" in request_lower:
+            components["queue"] = "kafka"
+        elif "activemq" in request_lower:
+            components["queue"] = "activemq"
+        elif "queue" in request_lower or "message" in request_lower or "broker" in request_lower:
+            components["queue"] = "rabbitmq"  # Default
         
-        # Frontend detection
+        # Backend/API detection (enhanced)
+        if "nodejs" in request_lower or "node.js" in request_lower or ("node" in request_lower and "api" in request_lower):
+            components["api"] = "nodejs"
+        elif "python" in request_lower or "flask" in request_lower or "django" in request_lower or "fastapi" in request_lower:
+            components["api"] = "python"
+        elif "golang" in request_lower or "go " in request_lower:
+            components["api"] = "golang"
+        elif "java" in request_lower or "spring" in request_lower:
+            components["api"] = "java"
+        elif "dotnet" in request_lower or ".net" in request_lower or "c#" in request_lower:
+            components["api"] = "dotnet"
+        elif "api" in request_lower or "backend" in request_lower or "microservice" in request_lower or "service" in request_lower:
+            components["api"] = "nodejs"  # Default
+        
+        # Frontend detection (enhanced)
         if "react" in request_lower:
             components["frontend"] = "react"
-        elif "vue" in request_lower:
+        elif "vue" in request_lower or "vuejs" in request_lower:
             components["frontend"] = "vue"
         elif "angular" in request_lower:
             components["frontend"] = "angular"
-        elif "frontend" in request_lower or "ui" in request_lower or "web" in request_lower:
+        elif "svelte" in request_lower:
+            components["frontend"] = "svelte"
+        elif "nextjs" in request_lower or "next.js" in request_lower:
+            components["frontend"] = "nextjs"
+        elif "nuxt" in request_lower:
+            components["frontend"] = "nuxt"
+        elif "frontend" in request_lower or " ui" in request_lower or "web app" in request_lower or "website" in request_lower:
             components["frontend"] = "nginx"  # Default for generic frontend
+        
+        # Monitoring/Logging detection (new)
+        if "prometheus" in request_lower:
+            components["monitoring"] = "prometheus"
+        elif "grafana" in request_lower:
+            components["monitoring"] = "grafana"
+        elif "elk" in request_lower or "elasticsearch" in request_lower or "kibana" in request_lower:
+            components["logging"] = "elk"
+        elif "datadog" in request_lower:
+            components["monitoring"] = "datadog"
+        elif "newrelic" in request_lower:
+            components["monitoring"] = "newrelic"
         
         return components
