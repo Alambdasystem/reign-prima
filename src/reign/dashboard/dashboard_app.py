@@ -571,6 +571,116 @@ class ReignDashboard:
                 dpg.add_spacer(height=5)
                 dpg.add_button(label="Execute Task", callback=self._execute_reign_task)
     
+    def _create_metrics_tab(self):
+        """Create the metrics tab with performance graphs."""
+        with dpg.tab(label="Metrics"):
+            dpg.add_text("Performance Metrics", color=[100, 200, 255])
+            dpg.add_separator()
+            dpg.add_spacer(height=5)
+            
+            # Row 1: Execution timeline
+            with dpg.drawlayer(width=900, height=150, tag="metrics_timeline"):
+                pass
+            
+            dpg.add_text("Execution Timeline (hourly)")
+            dpg.add_spacer(height=10)
+            
+            # Row 2: Agent performance
+            with dpg.group(horizontal=True):
+                with dpg.child_window(width=300, height=150):
+                    dpg.add_text("Agent Performance", color=[150, 200, 255])
+                    dpg.add_text("Docker:", color=[100, 180, 255])
+                    dpg.add_progress_bar(tag="docker_success_rate", width=250, default_value=0.8, height=20)
+                    dpg.add_text("Kubernetes:", color=[100, 180, 255])
+                    dpg.add_progress_bar(tag="k8s_success_rate", width=250, default_value=0.75, height=20)
+                    dpg.add_text("Terraform:", color=[100, 180, 255])
+                    dpg.add_progress_bar(tag="tf_success_rate", width=250, default_value=0.7, height=20)
+                
+                with dpg.child_window(width=300, height=150):
+                    dpg.add_text("Average Execution Time", color=[150, 200, 255])
+                    dpg.add_text("Docker: 2.3s", color=[100, 180, 255])
+                    dpg.add_text("Kubernetes: 5.1s", color=[100, 180, 255])
+                    dpg.add_text("Terraform: 8.7s", color=[100, 180, 255])
+                
+                with dpg.child_window(width=300, height=150):
+                    dpg.add_text("Recent Activity", color=[150, 200, 255])
+                    dpg.add_text("Containers: 12 running", color=[100, 180, 255])
+                    dpg.add_text("Deployments: 8 total", color=[100, 180, 255])
+                    dpg.add_text("Checkpoints: 3 saved", color=[100, 180, 255])
+    
+    def _create_containers_tab(self):
+        """Create the containers tab with logs and status."""
+        with dpg.tab(label="Containers"):
+            dpg.add_text("Docker Container Management", color=[100, 200, 255])
+            dpg.add_separator()
+            dpg.add_spacer(height=5)
+            
+            # Container selector
+            with dpg.group(horizontal=True):
+                dpg.add_text("Select Container:")
+                dpg.add_combo(
+                    tag="container_selector",
+                    items=["nginx:latest", "redis:latest", "postgres:13"],
+                    default_value="nginx:latest",
+                    width=200,
+                    callback=self._on_container_selected
+                )
+                dpg.add_button(label="Refresh", callback=self._refresh_container_logs)
+            
+            dpg.add_spacer(height=5)
+            
+            # Container logs
+            dpg.add_text("Container Logs", color=[150, 200, 255])
+            dpg.add_input_text(
+                tag="container_logs",
+                multiline=True,
+                readonly=True,
+                width=-1,
+                height=300,
+                default_value="[No logs yet]\nConnect to a running container to see logs..."
+            )
+            
+            dpg.add_spacer(height=5)
+            
+            # Container stats
+            dpg.add_text("Container Status", color=[150, 200, 255])
+            with dpg.group(horizontal=True):
+                with dpg.child_window(width=200, height=120):
+                    dpg.add_text("CPU Usage", color=[100, 180, 255])
+                    dpg.add_progress_bar(tag="container_cpu", width=190, default_value=0.35, height=20)
+                    dpg.add_text("35% of host")
+                
+                with dpg.child_window(width=200, height=120):
+                    dpg.add_text("Memory Usage", color=[100, 180, 255])
+                    dpg.add_progress_bar(tag="container_mem", width=190, default_value=0.42, height=20)
+                    dpg.add_text("256 MB / 512 MB")
+                
+                with dpg.child_window(width=200, height=120):
+                    dpg.add_text("Network I/O", color=[100, 180, 255])
+                    dpg.add_text("In: 1.2 MB", color=[100, 180, 255])
+                    dpg.add_text("Out: 0.8 MB", color=[100, 180, 255])
+
+    def _on_container_selected(self, sender, app_data, user_data):
+        """Handle container selection."""
+        selected = dpg.get_value("container_selector")
+        self._log(f"Selected container: {selected}", "INFO")
+        
+        # In a real implementation, would fetch actual container logs
+        sample_logs = f"""[2026-02-21 14:23:15] Container: {selected}
+[2026-02-21 14:23:15] Status: Running
+[2026-02-21 14:23:16] Health: Healthy
+[2026-02-21 14:23:17] Started 2 hours ago
+[2026-02-21 14:23:18] Uptime: 2h 15m
+"""
+        if dpg.does_item_exist("container_logs"):
+            dpg.set_value("container_logs", sample_logs)
+    
+    def _refresh_container_logs(self):
+        """Refresh container logs."""
+        selected = dpg.get_value("container_selector")
+        self._log(f"Refreshing logs for: {selected}", "INFO")
+        self._on_container_selected(None, None, None)
+    
     def _create_logs_tab(self):
         """Create the logs tab."""
         with dpg.tab(label="Activity Log"):
@@ -606,6 +716,8 @@ class ReignDashboard:
                     self._create_tasks_tab()
                     self._create_deployments_tab()
                     self._create_control_tab()
+                    self._create_metrics_tab()
+                    self._create_containers_tab()
                     self._create_logs_tab()
             
             print("Setting up viewport...")
